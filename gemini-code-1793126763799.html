@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Integral de Proyectos de Investigación - SENA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sena: { 50: '#e6f4ea', 500: '#39A900', 600: '#2d8600', 700: '#236b00', 900: '#154000' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .room-view { display: none; }
+        .room-view.active { display: block; }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-100 bg-slate-950">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shadow-md z-20">
+        <div class="flex items-center space-x-4">
+            <button id="sidebar-toggle" class="md:hidden text-slate-400 hover:text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-sena-500/10 border border-sena-500/30 flex items-center justify-center text-sena-500 font-bold text-lg">SENA</div>
+                <div>
+                    <h1 class="text-base font-bold tracking-tight text-white">Gestor de Proyectos de Investigación</h1>
+                    <p class="text-xs text-slate-400">Centro de Biotecnología Industrial - Regional Valle</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-6">
+            <!-- Global Autosave Indicator -->
+            <div class="hidden sm:flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700/50 text-xs">
+                <span id="autosave-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="autosave-text" class="text-slate-300 font-medium">Sincronizado</span>
+            </div>
+
+            <!-- Global Progress Bar Widget -->
+            <div class="flex flex-col items-end">
+                <div class="flex justify-between w-36 text-xs mb-1 font-medium">
+                    <span class="text-slate-400">Avance Total</span>
+                    <span id="global-progress-text" class="text-sena-500 font-bold">0%</span>
+                </div>
+                <div class="w-36 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="global-progress-bar" class="h-full bg-sena-500 transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="StorageEngine.exportJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 font-medium transition flex items-center space-x-1.5">
+                    <svg class="w-4 h-4 text-sena-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span>Exportar</span>
+                </button>
+                <label class="bg-sena-600 hover:bg-sena-500 text-white text-xs px-3 py-2 rounded-lg font-medium transition cursor-pointer flex items-center space-x-1.5 shadow-lg shadow-sena-600/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Importar</span>
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="StorageEngine.importJSON(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Navigation (Chassis) -->
+        <aside id="sidebar" class="w-72 bg-slate-900/90 backdrop-blur-md border-r border-slate-800 flex flex-col z-10 transition-all duration-300 -translate-x-full md:translate-x-0 absolute md:relative h-full">
+            <div class="p-4 border-b border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Estructura del Proyecto (4 Pisos)
+            </div>
+            <nav class="flex-1 overflow-y-auto p-4 space-y-6">
+                
+                <!-- Piso 1 -->
+                <div class="space-y-1">
+                    <div class="text-xs font-bold text-sena-500 uppercase tracking-wider px-2 mb-2">Piso 1: Identificación</div>
+                    <button onclick="NavigationEngine.switchRoom('room-01')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-01">
+                        <span>1. Título del Proyecto</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-01"></span>
+                    </button>
+                    <button onclick="NavigationEngine.switchRoom('room-02')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-02">
+                        <span>2. Problema y Justificación</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-02"></span>
+                    </button>
+                </div>
+
+                <!-- Piso 2 -->
+                <div class="space-y-1">
+                    <div class="text-xs font-bold text-sena-500 uppercase tracking-wider px-2 mb-2">Piso 2: Fundamentación</div>
+                    <button onclick="NavigationEngine.switchRoom('room-03')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-03">
+                        <span>3. Referente Conceptual</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-03"></span>
+                    </button>
+                    <button onclick="NavigationEngine.switchRoom('room-04')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-04">
+                        <span>4. Objetivos (Máx. 500 palabras)</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-04"></span>
+                    </button>
+                </div>
+
+                <!-- Piso 3 -->
+                <div class="space-y-1">
+                    <div class="text-xs font-bold text-sena-500 uppercase tracking-wider px-2 mb-2">Piso 3: Ejecución</div>
+                    <button onclick="NavigationEngine.switchRoom('room-05')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-05">
+                        <span>5. Metodología (Máx. 3000 palabras)</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-05"></span>
+                    </button>
+                    <button onclick="NavigationEngine.switchRoom('room-06')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-06">
+                        <span>6. Cronograma de Actividades</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-06"></span>
+                    </button>
+                    <button onclick="NavigationEngine.switchRoom('room-07')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-07">
+                        <span>7. Bibliografía y Referencias</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-07"></span>
+                    </button>
+                </div>
+
+                <!-- Piso 4 -->
+                <div class="space-y-1">
+                    <div class="text-xs font-bold text-sena-500 uppercase tracking-wider px-2 mb-2">Piso 4: Síntesis y Cierre</div>
+                    <button onclick="NavigationEngine.switchRoom('room-08')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-08">
+                        <span>8. Resumen Ejecutivo (Máx. 500)</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-08"></span>
+                    </button>
+                    <button onclick="NavigationEngine.switchRoom('room-09')" class="room-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between" data-room="room-09">
+                        <span>9. Consolidado y Vista Previa</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-700 status-indicator" data-status="room-09"></span>
+                    </button>
+                </div>
+
+            </nav>
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                SENA - CBI Palmira © 2026
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-6 lg:p-10 bg-slate-950">
+            <div class="max-w-4xl mx-auto">
+
+                <!-- Room 01: Título -->
+                <div id="room-01" class="room-view active space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 1 • Módulo 1</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">1. Título del Proyecto</h2>
+                        <p class="text-sm text-slate-400 mt-1">Defina el título definitivo que refleje claramente el propósito central de la investigación.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <label class="block text-sm font-semibold text-slate-300">Título de la Propuesta</label>
+                        <textarea id="field-titulo" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Ej: Implementación de bioprocesos controlados..." oninput="StorageEngine.saveField('titulo', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 02: Problema y Justificación -->
+                <div id="room-02" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 1 • Módulo 2</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">2. Planteamiento, Formulación, Justificación y Antecedentes</h2>
+                        <p class="text-sm text-slate-400 mt-1">Describa la naturaleza del problema, la pregunta de investigación, la justificación y los antecedentes previos.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">3.1 Planteamiento del Problema</label>
+                            <textarea id="field-planteamiento" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Naturaleza, magnitud y vacíos que se quieren llenar..." oninput="StorageEngine.saveField('planteamiento', this.value)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">3.2 Formulación del Problema (Pregunta de Investigación)</label>
+                            <textarea id="field-formulacion" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="¿Cuál es la pregunta central...?" oninput="StorageEngine.saveField('formulacion', this.value)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">3.3 Justificación</label>
+                            <textarea id="field-justificacion" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Necesidades, pertinencia y aportes al conocimiento..." oninput="StorageEngine.saveField('justificacion', this.value)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">3.4 Antecedentes</label>
+                            <textarea id="field-antecedentes" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Investigaciones previas a nivel internacional, regional y nacional..." oninput="StorageEngine.saveField('antecedentes', this.value)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room 03: Referente Conceptual -->
+                <div id="room-03" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 2 • Módulo 3</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">3. Referente Conceptual</h2>
+                        <p class="text-sm text-slate-400 mt-1">Estructura teórica y relaciones conceptuales del proyecto.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <label class="block text-sm font-semibold text-slate-300">Marco Conceptual y Categorías de Análisis</label>
+                        <textarea id="field-conceptual" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Describa el mapa conceptual, plano gnoseológico o categorías teóricas..." oninput="StorageEngine.saveField('conceptual', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 04: Objetivos -->
+                <div id="room-04" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 2 • Módulo 4</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">4. Objetivos del Proyecto</h2>
+                        <p class="text-sm text-slate-400 mt-1">Formule un objetivo general y los objetivos específicos necesarios (Máximo 500 palabras).</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                        <div class="flex justify-between items-center text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span>Conteo de palabras (Límite: 500)</span>
+                            <span id="counter-objetivos" class="font-bold text-sena-500">0 / 500 palabras</span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">Objetivo General</label>
+                            <textarea id="field-obj-general" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Debe iniciar con verbo en infinitivo..." oninput="WordCounterEngine.check('objetivos', this, 500); StorageEngine.saveField('objGeneral', this.value)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-300 mb-2">Objetivos Específicos</label>
+                            <textarea id="field-obj-especificos" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="1. ...&#10;2. ...&#10;3. ..." oninput="WordCounterEngine.check('objetivos', this, 500); StorageEngine.saveField('objEspecificos', this.value)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room 05: Metodología -->
+                <div id="room-05" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 3 • Módulo 5</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">5. Metodología Propuesta</h2>
+                        <p class="text-sm text-slate-400 mt-1">Enfoque metodológico, procedimientos, técnicas y análisis de datos (Máximo 3,000 palabras).</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <div class="flex justify-between items-center text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span>Conteo de palabras (Límite: 3000)</span>
+                            <span id="counter-metodologia" class="font-bold text-sena-500">0 / 3000 palabras</span>
+                        </div>
+                        <textarea id="field-metodologia" rows="12" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Describa el diseño metodológico, fases, técnicas de recolección y análisis..." oninput="WordCounterEngine.check('metodologia', this, 3000); StorageEngine.saveField('metodologia', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 06: Cronograma -->
+                <div id="room-06" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 3 • Módulo 6</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">6. Cronograma de Actividades</h2>
+                        <p class="text-sm text-slate-400 mt-1">Relación cronológica de actividades por meses.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <textarea id="field-cronograma" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Detalle las actividades en función del tiempo de ejecución..." oninput="StorageEngine.saveField('cronograma', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 07: Bibliografía -->
+                <div id="room-07" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 3 • Módulo 7</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">7. Bibliografía y Referencias</h2>
+                        <p class="text-sm text-slate-400 mt-1">Fuentes consultadas y citadas en el documento.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <textarea id="field-bibliografia" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Normas APA / IEEE de las fuentes bibliográficas..." oninput="StorageEngine.saveField('bibliografia', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 08: Resumen Ejecutivo -->
+                <div id="room-08" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 4 • Módulo 8</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">8. Resumen Ejecutivo</h2>
+                        <p class="text-sm text-slate-400 mt-1">Síntesis precisa del problema, marco teórico, objetivos, metodología y resultados (Máximo 500 palabras).</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                        <div class="flex justify-between items-center text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span>Conteo de palabras (Límite: 500)</span>
+                            <span id="counter-resumen" class="font-bold text-sena-500">0 / 500 palabras</span>
+                        </div>
+                        <textarea id="field-resumen" rows="8" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-sena-500 transition text-sm" placeholder="Redacte el resumen final del proyecto..." oninput="WordCounterEngine.check('resumen', this, 500); StorageEngine.saveField('resumen', this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Room 09: Consolidado -->
+                <div id="room-09" class="room-view space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <span class="text-xs font-bold text-sena-500 uppercase tracking-wider">Piso 4 • Módulo 9</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">9. Consolidado y Vista Previa</h2>
+                        <p class="text-sm text-slate-400 mt-1">Verificación general y preparación del documento final.</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                        <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 text-sm text-slate-300">
+                            <p class="font-medium text-white mb-2">Estado del Proyecto:</p>
+                            <p>Todas las secciones se guardan automáticamente en tu navegador. Puedes exportar el archivo JSON para enviárselo a tu instructor o respaldar tu avance en cualquier momento.</p>
+                        </div>
+                        <button onclick="window.print()" class="w-full bg-sena-600 hover:bg-sena-500 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-sena-600/20">
+                            Imprimir / Guardar como PDF
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Application Core Script -->
+    <script>
+        const STORAGE_KEY = 'sena_investigacion_project_v1';
+
+        const StorageEngine = {
+            data: {},
+            init() {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    try {
+                        this.data = JSON.parse(saved);
+                        this.hydrateUI();
+                    } catch (e) {
+                        console.error('Error cargando datos', e);
+                    }
+                }
+                this.updateProgress();
+            },
+            saveField(key, value) {
+                this.data[key] = value;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                this.triggerAutosaveIndicator();
+                this.updateProgress();
+            },
+            hydrateUI() {
+                for (const [key, value] of Object.entries(this.data)) {
+                    const el = document.getElementById(`field-${key}`);
+                    if (el) {
+                        el.value = value;
+                        if (['objetivos', 'metodologia', 'resumen'].includes(key)) {
+                            // trigger counter check if needed
+                        }
+                    }
+                }
+            },
+            triggerAutosaveIndicator() {
+                const dot = document.getElementById('autosave-dot');
+                const txt = document.getElementById('autosave-text');
+                dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+                txt.innerText = 'Guardando...';
+                setTimeout(() => {
+                    dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                    txt.innerText = 'Sincronizado';
+                }, 500);
+            },
+            updateProgress() {
+                const fields = ['titulo', 'planteamiento', 'formulacion', 'justificacion', 'antecedentes', 'conceptual', 'objGeneral', 'objEspecificos', 'metodologia', 'cronograma', 'bibliografia', 'resumen'];
+                let filled = fields.filter(f => this.data[f] && this.data[f].trim().length > 0).length;
+                let pct = Math.round((filled / fields.length) * 100);
+                
+                document.getElementById('global-progress-bar').style.width = `${pct}%`;
+                document.getElementById('global-progress-text.innerText` = `${pct}%`;
+
+                // Update room status dots in sidebar
+                document.querySelectorAll('.status-indicator').forEach(indicator => {
+                    const room = indicator.getAttribute('data-status');
+                    // simple mapping rule
+                    let isComplete = false;
+                    if(room === 'room-01') isComplete = !!this.data['titulo'];
+                    if(room === 'room-02') isComplete = !!(this.data['planteamiento'] && this.data['formulacion']);
+                    if(room === 'room-03') isComplete = !!this.data['conceptual'];
+                    if(room === 'room-04') isComplete = !!(this.data['objGeneral'] && this.data['objEspecificos']);
+                    if(room === 'room-05') isComplete = !!this.data['metodologia'];
+                    if(room === 'room-06') isComplete = !!this.data['cronograma'];
+                    if(room === 'room-07') isComplete = !!this.data['bibliografia'];
+                    if(room === 'room-08') isComplete = !!this.data['resumen'];
+                    if(room === 'room-09') isComplete = pct > 80;
+
+                    indicator.className = `w-2 h-2 rounded-full ${isComplete ? 'bg-sena-500' : 'bg-slate-700'}`;
+                });
+            },
+            exportJSON() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `proyecto_investigacion_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            },
+            importJSON(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        this.data = parsed;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                        this.hydrateUI();
+                        this.updateProgress();
+                        alert('¡Proyecto importado con éxito!');
+                    } catch (err) {
+                        alert('Archivo JSON inválido.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+
+        const WordCounterEngine = {
+            check(type, el, limit) {
+                const words = el.value.trim() ? el.value.trim().split(/\s+/).length : 0;
+                const counterEl = document.getElementById(`counter-${type}`);
+                if (counterEl) {
+                    counterEl.innerText = `${words} / ${limit} palabras`;
+                    if (words > limit) {
+                        counterEl.className = 'font-bold text-rose-500';
+                    } else {
+                        counterEl.className = 'font-bold text-sena-500';
+                    }
+                }
+            }
+        };
+
+        const NavigationEngine = {
+            switchRoom(roomId) {
+                document.querySelectorAll('.room-view').forEach(v => v.classList.remove('active'));
+                document.querySelectorAll('.room-nav-btn').forEach(b => b.classList.remove('bg-slate-800', 'text-white'));
+                
+                const target = document.getElementById(roomId);
+                if (target) target.classList.add('active');
+                
+                const btn = document.querySelector(`[data-room="${roomId}"]`);
+                if (btn) btn.classList.add('bg-slate-800', 'text-white');
+
+                // Close mobile sidebar if open
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        };
+
+        // Mobile toggle
+        document.getElementById('sidebar-toggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            StorageEngine.init();
+        });
+    </script>
+</body>
+</html>
